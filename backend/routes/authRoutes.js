@@ -1,4 +1,3 @@
-```javascript
 const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
@@ -30,18 +29,33 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        const user = await User.create({
-            name,
-            email,
-            password,
-        });
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
-        if (user) {
+        // Create user
+        const { data: newUser, error } = await supabase
+            .from('users')
+            .insert([
+                {
+                    name,
+                    email,
+                    password: hashedPassword,
+                }
+            ])
+            .select()
+            .single();
+
+        if (error) {
+            throw error;
+        }
+
+        if (newUser) {
             res.status(201).json({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                token: generateToken(user._id),
+                _id: newUser.id,
+                name: newUser.name,
+                email: newUser.email,
+                token: generateToken(newUser.id),
             });
         } else {
             res.status(400).json({ message: 'Invalid user data' });
@@ -58,14 +72,22 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email });
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .single();
 
-        if (user && (await user.matchPassword(password))) {
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "The result contains 0 rows"
+            throw error;
+        }
+
+        if (user && (await bcrypt.compare(password, user.password))) {
             res.json({
-                _id: user._id,
+                _id: user.id,
                 name: user.name,
                 email: user.email,
-                token: generateToken(user._id),
+                token: generateToken(user.id),
             });
         } else {
             res.status(401).json({ message: 'Invalid email or password' });

@@ -56,8 +56,15 @@ router.get('/today', protect, async (req, res) => {
 
     // ... Simplified implementation ...
     try {
-        const profile = await FitnessProfile.findOne({ user: req.user._id });
-        if (!profile) return res.status(404).json({ message: 'No profile' });
+        const { data: profileData, error } = await supabase
+            .from('fitness_profiles')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .single();
+
+        if (!profileData) return res.status(404).json({ message: 'No profile' });
+
+        const profile = mapProfile(profileData);
 
         const weeklyPlan = generateWorkoutPlan(profile);
         const dayOfWeek = (new Date().getDay() + 6) % 7; // Mon=0, Sun=6... actually getDay 0=Sun. 
@@ -79,14 +86,23 @@ router.get('/today', protect, async (req, res) => {
 router.post('/log', protect, async (req, res) => {
     const { name, exercises, duration, caloriesBurned } = req.body;
     try {
-        const workout = await Workout.create({
-            user: req.user._id,
-            name,
-            exercises, // Expects array with isCompleted: true
-            duration,
-            caloriesBurned,
-            status: 'Completed'
-        });
+        const { data: workout, error } = await supabase
+            .from('workouts')
+            .insert([
+                {
+                    user_id: req.user.id,
+                    name,
+                    exercises, // Expects array with isCompleted: true
+                    duration,
+                    calories_burned: caloriesBurned,
+                    status: 'Completed'
+                }
+            ])
+            .select()
+            .single();
+
+        if (error) throw error;
+
         res.status(201).json(workout);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -98,7 +114,15 @@ router.post('/log', protect, async (req, res) => {
 // @access  Private
 router.get('/history', protect, async (req, res) => {
     try {
-        const history = await Workout.find({ user: req.user._id, status: 'Completed' }).sort({ date: -1 });
+        const { data: history, error } = await supabase
+            .from('workouts')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .eq('status', 'Completed')
+            .order('date', { ascending: false });
+
+        if (error) throw error;
+
         res.json(history);
     } catch (error) {
         res.status(500).json({ message: error.message });

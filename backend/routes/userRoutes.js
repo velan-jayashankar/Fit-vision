@@ -9,6 +9,12 @@ const { calculateBMR, calculateTDEE } = require('../ai/nutritionEngine');
 // @access  Private
 router.post('/profile', protect, async (req, res) => {
     const {
+        age,
+        gender,
+        height,
+        weight,
+        goal,
+        experienceLevel,
         daysPerWeek,
         equipment,
         dietPreference
@@ -22,24 +28,26 @@ router.post('/profile', protect, async (req, res) => {
         const tdee = calculateTDEE(bmr, activityMap);
 
         // Upsert profile
-        const profile = await FitnessProfile.findOneAndUpdate(
-            { user: req.user._id },
-            {
-                user: req.user._id,
+        const { data: profile, error } = await supabase
+            .from('fitness_profiles')
+            .upsert({
+                user_id: req.user.id,
                 age,
                 gender,
                 height,
                 weight,
                 goal,
-                experienceLevel,
-                daysPerWeek,
+                experience_level: experienceLevel,
+                days_per_week: daysPerWeek,
                 equipment,
-                dietPreference,
+                diet_preference: dietPreference,
                 bmr,
                 tdee
-            },
-            { new: true, upsert: true }
-        );
+            }, { onConflict: 'user_id' })
+            .select()
+            .single();
+
+        if (error) throw error;
 
         res.json(profile);
     } catch (error) {
@@ -52,7 +60,14 @@ router.post('/profile', protect, async (req, res) => {
 // @access  Private
 router.get('/profile', protect, async (req, res) => {
     try {
-        const profile = await FitnessProfile.findOne({ user: req.user._id });
+        const { data: profile, error } = await supabase
+            .from('fitness_profiles')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+
         if (profile) {
             res.json(profile);
         } else {

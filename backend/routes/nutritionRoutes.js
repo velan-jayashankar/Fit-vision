@@ -38,32 +38,66 @@ router.get('/targets', protect, async (req, res) => {
 // @access  Private
 router.post('/log', protect, async (req, res) => {
     const { name, type, calories, protein, carbs, fat } = req.body;
-
-    // Find log for today
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    const today = new Date().toISOString().split('T')[0];
 
     try {
-        let log = await NutritionLog.findOne({
-            user: req.user._id,
-            date: { $gte: startOfDay, $lte: endOfDay }
-        });
+        // Find log for today
+        const { data: existingLog, error: fetchError } = await supabase
+            .from('nutrition_logs')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .eq('date', today)
+            .single();
+
+        if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+        let log = existingLog;
 
         if (!log) {
-            log = new NutritionLog({ user: req.user._id, meals: [] });
+            // Create new log
+            const { data: newLog, error: insertError } = await supabase
+                .from('nutrition_logs')
+                .insert([
+                    {
+                        user_id: req.user.id,
+                        meals: [{ name, type, calories, protein, carbs, fat }],
+                        total_calories: calories,
+                        total_protein: protein || 0,
+                        total_carbs: carbs || 0,
+                        total_fat: fat || 0,
+                        date: today
+                    }
+                ])
+                .select()
+                .single();
+
+            if (insertError) throw insertError;
+            log = newLog;
+        } else {
+            // Update existing log
+            const updatedMeals = [...log.meals, { name, type, calories, protein, carbs, fat }];
+            const updatedCalories = log.total_calories + calories;
+            const updatedProtein = log.total_protein + (protein || 0);
+            const updatedCarbs = log.total_carbs + (carbs || 0);
+            const updatedFat = log.total_fat + (fat || 0);
+
+            const { data: updatedLog, error: updateError } = await supabase
+                .from('nutrition_logs')
+                .update({
+                    meals: updatedMeals,
+                    total_calories: updatedCalories,
+                    total_protein: updatedProtein,
+                    total_carbs: updatedCarbs,
+                    total_fat: updatedFat
+                })
+                .eq('id', log.id)
+                .select()
+                .single();
+
+            if (updateError) throw updateError;
+            log = updatedLog;
         }
 
-        log.meals.push({ name, type, calories, protein, carbs, fat });
-
-        // Recalculate totals
-        log.totalCalories += calories;
-        log.totalProtein += (protein || 0);
-        log.totalCarbs += (carbs || 0);
-        log.totalFat += (fat || 0);
-
-        await log.save();
         res.json(log);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -74,17 +108,44 @@ router.post('/log', protect, async (req, res) => {
 // @route   GET /api/nutrition/today
 // @access  Private
 router.get('/today', protect, async (req, res) => {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    const today = new Date().toISOString().split('T')[0];
 
     try {
-        const log = await NutritionLog.findOne({
-            user: req.user._id,
-            date: { $gte: startOfDay, $lte: endOfDay }
-        });
-        res.json(log || { meals: [], totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0 });
+        const { data: log, error } = await supabase
+            .from('nutrition_logs')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .eq('date', today)
+            .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+
+        // Return empty structure if no log found, matching frontend expectation (but snake_case vs camelCase?)
+        // The Mongoose model returned camelCase properties effectively (or snake_case if we used .toJSON()?)
+        // The original code: res.json(log || { meals: [], totalCalories: 0 ... })
+        // Supabase returns snake_case columns.
+        // Frontend might expect camelCase if it was built for Mongoose.
+        // Let's assume for now we return what DB gives, but handle the default case.
+        // Actually, let's map it to camelCase just in case to avoid frontend breakage.
+
+        const responseLog = log ? {
+            _id: log.id,
+            user: log.user_id,
+            meals: log.meals,
+            totalCalories: log.total_calories,
+            totalProtein: log.total_protein,
+            totalCarbs: log.total_carbs,
+            totalFat: log.total_fat,
+            date: log.date
+        } : {
+            meals: [],
+            totalCalories: 0,
+            totalProtein: 0,
+            totalCarbs: 0,
+            totalFat: 0
+        };
+
+        res.json(responseLog);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
