@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fit-vision Repository</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+        .card { background: #1e293b; padding: 2rem; border-radius: 1rem; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { color: #4f46e5; }
+        code { background: #334155; padding: 0.2rem 0.4rem; border-radius: 0.25rem; }
+        .btn { display: inline-block; margin-top: 1rem; padding: 0.75rem 1.5rem; background: #4f46e5; color: white; text-decoration: none; border-radius: 0.5rem; font-weight: bold; }
+        .btn:hover { background: #4338ca; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Deployment Setup Required</h1>
+        <p>You have deployed the <strong>Root Repository</strong>.</p>
+        <p>This project is a Monorepo. You must deploy the Frontend and Backend separately.</p>
+        <div style="text-align: left; margin: 1.5rem 0; background: #0f172a; padding: 1rem; border-radius: 0.5rem;">
+            <strong>Step 1:</strong> Go to Vercel Settings > General<br>
+            <strong>Step 2:</strong> Change <code>Root Directory</code> to: <br>
+            - <code>frontend</code> (for the App)<br>
+            - <code>backend</code> (for the API)
+        </div>
+        <p>Please redeploy with the correct settings.</p>
+    </div>
+</body>
+</html>
