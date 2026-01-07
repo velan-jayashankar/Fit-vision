@@ -14,7 +14,12 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Routes
+// Root Route for Vercel Health Check
+app.get('/', (req, res) => {
+    res.send('Fit-vision API is Running');
+});
+
+// API Routes
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
