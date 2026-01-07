@@ -1,21 +1,33 @@
 const express = require('express');
 const router = express.Router();
-const Workout = require('../models/Workout');
-const FitnessProfile = require('../models/FitnessProfile');
+const supabase = require('../config/supabase');
 const { protect } = require('../middleware/authMiddleware');
 const { generateWorkoutPlan } = require('../ai/workoutEngine');
+
+// Helper to map Supabase snake_case to AI engine's expected camelCase
+const mapProfile = (p) => ({
+    ...p,
+    experienceLevel: p.experience_level,
+    daysPerWeek: p.days_per_week,
+    dietPreference: p.diet_preference
+});
 
 // @desc    Generate/Regenerate Workout Plan
 // @route   POST /api/workout/generate
 // @access  Private
 router.post('/generate', protect, async (req, res) => {
     try {
-        const profile = await FitnessProfile.findOne({ user: req.user._id });
+        const { data: profileData, error } = await supabase
+            .from('fitness_profiles')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .single();
 
-        if (!profile) {
+        if (error || !profileData) {
             return res.status(404).json({ message: 'Profile not found. Please complete onboarding.' });
         }
 
+        const profile = mapProfile(profileData);
         const plan = generateWorkoutPlan(profile);
 
         // Save plans to DB ? Or just return JSON? 

@@ -1,6 +1,7 @@
+```javascript
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
+const supabase = require('../config/supabase');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
@@ -18,9 +19,14 @@ router.post('/register', async (req, res) => {
     const { name, email, password } = req.body;
 
     try {
-        const userExists = await User.findOne({ email });
+        // Check if user exists
+        const { data: existingUser } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .single();
 
-        if (userExists) {
+        if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
         }
 

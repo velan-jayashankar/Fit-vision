@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const supabase = require('../config/supabase');
 
 const protect = async (req, res, next) => {
     let token;
@@ -13,7 +13,13 @@ const protect = async (req, res, next) => {
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            req.user = await User.findById(decoded.id).select('-password');
+            const { data: user } = await supabase
+                .from('users')
+                .select('id, name, email')
+                .eq('id', decoded.id)
+                .single();
+
+            req.user = user;
 
             next();
         } catch (error) {

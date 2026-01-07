@@ -1,18 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const NutritionLog = require('../models/NutritionLog');
-const FitnessProfile = require('../models/FitnessProfile');
+const supabase = require('../config/supabase');
 const { protect } = require('../middleware/authMiddleware');
 const { calculateMacros } = require('../ai/nutritionEngine');
+
+// Helper to map Supabase snake_case to AI engine's expected camelCase
+const mapProfile = (p) => ({
+    ...p,
+    experienceLevel: p.experience_level,
+    daysPerWeek: p.days_per_week,
+    dietPreference: p.diet_preference
+});
 
 // @desc    Get Daily Nutrition Targets
 // @route   GET /api/nutrition/targets
 // @access  Private
 router.get('/targets', protect, async (req, res) => {
     try {
-        const profile = await FitnessProfile.findOne({ user: req.user._id });
-        if (!profile) return res.status(404).json({ message: 'No profile' });
+        const { data: profileData, error } = await supabase
+            .from('fitness_profiles')
+            .select('*')
+            .eq('user_id', req.user.id)
+            .single();
 
+        if (!profileData) return res.status(404).json({ message: 'No profile' });
+
+        const profile = mapProfile(profileData);
         const targets = calculateMacros(profile.tdee, profile.goal);
         res.json(targets);
     } catch (error) {

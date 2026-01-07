@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const FitnessProfile = require('../models/FitnessProfile');
-const { protect } = require('../middleware/authMiddleware'); // Need to create middleware
+const supabase = require('../config/supabase');
+const { protect } = require('../middleware/authMiddleware');
 const { calculateBMR, calculateTDEE } = require('../ai/nutritionEngine');
 
 // @desc    Create or Update Fitness Profile (Onboarding)
@@ -9,12 +9,6 @@ const { calculateBMR, calculateTDEE } = require('../ai/nutritionEngine');
 // @access  Private
 router.post('/profile', protect, async (req, res) => {
     const {
-        age,
-        gender,
-        height,
-        weight,
-        goal,
-        experienceLevel,
         daysPerWeek,
         equipment,
         dietPreference
