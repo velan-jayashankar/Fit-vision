@@ -1,0 +1,42 @@
+[
+  {
+    "id": "ex_001",
+    "name": "Push Up",
+    "muscleGroup": "Chest",
+    "equipment": "Bodyweight",
+    "difficulty": "Beginner",
+    "type": "Strength"
+  },
+  {
+    "id": "ex_002",
+    "name": "Squat",
+    "muscleGroup": "Legs",
+    "equipment": "Bodyweight",
+    "difficulty": "Beginner",
+    "type": "Strength"
+  },
+  {
+    "id": "ex_003",
+    "name": "Burpees",
+    "muscleGroup": "Full Body",
+    "equipment": "Bodyweight",
+    "difficulty": "Intermediate",
+    "type": "Cardio"
+  },
+  {
+    "id": "ex_004",
+    "name": "Dumbbell Bench Press",
+    "muscleGroup": "Chest",
+    "equipment": "Gym",
+    "difficulty": "Intermediate",
+    "type": "Strength"
+  },
+  {
+    "id": "ex_005",
+    "name": "Pull Up",
+    "muscleGroup": "Back",
+    "equipment": "Bodyweight",
+    "difficulty": "Advanced",
+    "type": "Strength"
+  }
+]

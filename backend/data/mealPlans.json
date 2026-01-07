@@ -1,0 +1,32 @@
+[
+    {
+        "id": "meal_001",
+        "name": "Oatmeal with Fruits",
+        "type": "Breakfast",
+        "preference": "Veg",
+        "calories": 350,
+        "protein": 10,
+        "carbs": 60,
+        "fat": 6
+    },
+    {
+        "id": "meal_002",
+        "name": "Grilled Chicken Salad",
+        "type": "Lunch",
+        "preference": "Non-veg",
+        "calories": 450,
+        "protein": 40,
+        "carbs": 15,
+        "fat": 20
+    },
+    {
+        "id": "meal_003",
+        "name": "Paneer Tikka with Roti",
+        "type": "Dinner",
+        "preference": "Veg",
+        "calories": 500,
+        "protein": 25,
+        "carbs": 50,
+        "fat": 22
+    }
+]
